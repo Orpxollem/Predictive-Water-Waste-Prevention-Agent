@@ -1,65 +1,64 @@
 import time
 import threading
+import sys
 
 class Actions:
     def handle(self, risk, beliefs):
-        # 1. Handle Reopening if Valve is Closed
+        # 1. State Check: If valve is closed, must reopen before checking new flow
         if not beliefs.is_valve_open():
+            # Clear any trailing characters from previous lines
+            print("\r" + " " * 60, end="\r") 
             print("[SYSTEM] Valve is CLOSED.")
-            # We use a standard input here because the agent should wait for the user to reopen it
             choice = input("Press R to reopen valve: ").strip().upper()
             if choice == "R":
                 beliefs.open_valve()
                 print("[ACTION] Valve reopened.")
             return
 
-        # 2. Handle Low Risk
+        # 2. Logic for Low Risk
         if risk == "LOW":
             print("[LOG] Normal usage.")
             return
 
-        # 3. Handle Medium & High Risk with 15-second timeout
-        # Determine the prompts based on risk level
-        if risk == "MEDIUM":
-            print("[WARNING] Suspicious usage detected.")
-            prompt_msg = "Press S to shut valve | I to ignore"
-        else: # HIGH
-            print("[ALERT] HIGH RISK! Possible leak detected!")
-            prompt_msg = "Press S to shut valve NOW | O to keep open"
-
-        print(prompt_msg)
+        # 3. Logic for Medium/High Risk with Countdown
+        print(f"\n[{'ALERT' if risk == 'HIGH' else 'WARNING'}] Potential waste detected!")
+        prompt = "S: Shut Valve | O: Open (Ignore)" if risk == "HIGH" else "S: Shut | I: Ignore"
+        print(prompt)
         
-        # Helper for timed input
         user_choice = {"value": None}
+        stop_event = threading.Event()
+
         def get_input():
             try:
-                user_choice["value"] = input("Your choice: ").strip().upper()
+                # sys.stdin.readline is more thread-safe for simulations
+                line = sys.stdin.readline().strip().upper()
+                user_choice["value"] = line
+                stop_event.set()
             except EOFError:
                 pass
 
-        input_thread = threading.Thread(target=get_input)
-        input_thread.daemon = True
+        input_thread = threading.Thread(target=get_input, daemon=True)
         input_thread.start()
 
-        # 15 Second Countdown
+        # 15-second countdown loop [as per your requirement]
         for remaining in range(15, 0, -1):
-            if user_choice["value"] is not None:
+            if stop_event.is_set():
                 break
-            print(f"Auto action in {remaining} seconds...", end="\r")
+            # Overwrite the same line using \r to prevent the "flicker"
+            print(f"/Auto-action in {remaining:2d} seconds... ", end="\r", flush=True)
             time.sleep(1)
         
-        print() # Clear the line after countdown
+        # Clear the countdown line before printing the result
+        print("\r" + " " * 60, end="\r")
 
-        # Decision Logic
+        # Final decision based on input or timeout
         choice = user_choice["value"]
-        
         if choice == "S":
             beliefs.close_valve()
-            print(f"[ACTION] Valve closed by user (Risk: {risk}).")
-        elif choice in ["I", "O"]:
-            print(f"[INFO] User opted to keep valve open.")
+            print(f"[ACTION] Valve closed by user.")
+        elif choice in ["O", "I"]:
+            print(f"[INFO] User acknowledged and kept valve open.")
         else:
-            # This covers both the "None" (timeout) and invalid inputs
-            print("[TIMEOUT/NO INPUT] Safety protocol triggered.")
+            # Autonomous safety action [Implementation requirement]
             beliefs.close_valve()
-            print("[ACTION] Valve closed automatically.")
+            print("[TIMEOUT] No response. Valve closed automatically for safety.")
