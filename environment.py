@@ -18,9 +18,9 @@ class Environment:
 
         else:
             if 4 <= hour <= 7:
-                period = "morning_peak"      # bathing time
+                period = "morning_peak"      # bathing time in the morining
             elif 18 <= hour <= 21:
-                period = "evening_peak"      # family activity
+                period = "evening_peak"      # family activity at night
             else:
                 period = "off_peak"
 
