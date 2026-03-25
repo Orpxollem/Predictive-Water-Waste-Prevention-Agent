@@ -6,6 +6,7 @@ class DecisionEngine:
 
         weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
+        # Usage is suspicious when high during time periods when people are likely away 
         if day in weekdays and period == "off_peak" and flow > 1:
             return "HIGH"
 

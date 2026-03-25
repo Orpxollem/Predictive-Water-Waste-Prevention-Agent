@@ -1,18 +1,12 @@
-import asyncio
 from agent import WaterAgent
 
-async def main():
-    agent = WaterAgent("admin@localhost", "admin")
-    await agent.start()
+if __name__ == "__main__":
+    agent = WaterAgent()
 
-    print("<=== Water Waste Prevention Agent Running ===>")
+    print("<=== Autonomous Water Waste Prevention Agent Running ===>")
 
     try:
         while True:
-            await asyncio.sleep(1)
+            agent.run()
     except KeyboardInterrupt:
         print("\nSystem stopped by user.")
-        await agent.stop()
-
-if __name__ == "__main__":
-    asyncio.run(main())
